@@ -1,7 +1,7 @@
-# Compare on-path and off-path caching strategies
+# Compare LIRS and other cache replacement policies(LRU, SLRU, FIFO, RAND)
 
 This example runs experiments using different combinations of topologies,
-caching strategies, content popularity distributions and cache sizes and plot
+caching strategies, content popularity distributions, cache sizes and cache policies and plot
 the results on a number of graphs.
 
 ## Run

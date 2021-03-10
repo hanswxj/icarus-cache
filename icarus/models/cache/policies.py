@@ -821,7 +821,7 @@ class BeladyMinCache(Cache):
 
 @register_cache_policy('LIRS')
 class LirsCache(Cache):
-    #LIRS (Low Inter-reference Recency Set) cache eviction policy.
+    #LIRS (Low Inter-reference Recency Set) cache replacement policy.
 
     @inheritdoc(Cache)
     def __init__(self, maxlen, **kwargs):
