@@ -61,7 +61,7 @@ NETWORK_CACHE = [0.02, 0.05, 0.1, 0.15, 0.2]
 N_CONTENTS = 3 * 10 ** 5
 
 # Number of requests per second (over the whole network)
-NETWORK_REQUEST_RATE = 40.0
+NETWORK_REQUEST_RATE = 100.0
 
 # Number of content requests generated to prepopulate the caches
 # These requests are not logged
@@ -74,9 +74,9 @@ N_MEASURED_REQUESTS = 6 * 10 ** 5
 # List of all implemented topologies
 # Topology implementations are located in ./icarus/scenarios/topology.py
 TOPOLOGIES = [
-        'GEANT',
-        'WIDE',
-        'GARR',
+#        'GEANT',
+#        'WIDE',
+#        'GARR',
         'TISCALI',        
              ]
 
@@ -84,18 +84,19 @@ TOPOLOGIES = [
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = [
      'LCE',  # Leave Copy Everywhere
-     'LCD',  # Leave Copy Down
+#     'LCD',  # Leave Copy Down
              ]
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
 # Cache policy implmentations are located in ./icarus/models/cache.py
 CACHE_POLICIES = [
-     'LRU',
+#     'LRU',
      'SLRU',
+     'ARC',
      'LIRS',
-     'FIFO',
-     'RAND',
+#     'FIFO',
+#     'RAND',
                ]
 
 # Queue of experiments

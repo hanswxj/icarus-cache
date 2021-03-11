@@ -21,6 +21,7 @@ __all__ = [
         'Cache',
         'NullCache',
         'BeladyMinCache',
+        'ArcCache',
         'LirsCache',
         'LruCache',
         'SegmentedLruCache',
@@ -817,6 +818,187 @@ class BeladyMinCache(Cache):
     @inheritdoc(Cache)
     def clear(self):
         self._cache.clear()
+
+
+@register_cache_policy('ARC')
+class ArcCache(Cache):
+    """ARC cache eviction policy.
+
+    """
+
+    @inheritdoc(Cache)
+    def __init__(self, maxlen, **kwargs):
+        self._T1 = LinkedSet()
+        self._T2 = LinkedSet()
+        self._B1 = LinkedSet()
+        self._B2 = LinkedSet()
+        self._maxlen = int(maxlen)
+        self._p = 0
+        self._cache = {}
+        if self._maxlen <= 0:
+            raise ValueError('maxlen must be positive')
+
+    @inheritdoc(Cache)
+    def __len__(self):
+        return len(self._cache)
+
+    @property
+    @inheritdoc(Cache)
+    def maxlen(self):
+        return self._maxlen
+
+    @inheritdoc(Cache)
+    def dump(self):
+        return list(iter(self._cache))
+
+    def replace(self, k):
+        if len(self._T1) >= 1 and ((k in self._B2 and len(self._T1) == self._p) or len(self._T1)>self._p):
+            evicted = self._T1.pop_bottom()
+            self._B1.append_top(evicted)
+            self._cache.pop(evicted)
+        else:
+            evicted = self._T2.pop_bottom()
+            self._B2.append_top(evicted)
+            self._cache.pop(evicted)
+
+
+    def position(self, k, *args, **kwargs):
+        """Return the current position of an item in the cache. Position *0*
+        refers to the head of cache (i.e. most recently used item), while
+        position *maxlen - 1* refers to the tail of the cache (i.e. the least
+        recently used item).
+
+        This method does not change the internal state of the cache.
+
+        Parameters
+        ----------
+        k : any hashable type
+            The item looked up in the cache
+
+        Returns
+        -------
+        position : int
+            The current position of the item in the cache
+        """
+        if not k in self._cache:
+            raise ValueError('The item %s is not in the cache' % str(k))
+        return self._cache.index(k)
+    """
+        if k in self._T1:
+            position = self._T1.index(k)
+        else:
+            position = self._T2.index(k) + self._t1len
+        return position
+    """
+
+    @inheritdoc(Cache)
+    def has(self, k, *args, **kwargs):
+        return k in self._cache
+
+    @inheritdoc(Cache)
+    def get(self, k, *args, **kwargs):
+        # search content over the list
+        # if it has it push on top, otherwise return false
+        if k not in self._cache:
+            return False
+        
+        #for x in self._cache: print x, self._cache[x]
+
+        op = self._cache[k]
+        if op == 'T1':
+            self._T1.remove(k)
+            self._T2.append_top(k)
+            self._cache[k] = 'T2'
+        elif op == 'T2':
+            self._T2.move_to_top(k)
+        else:
+            raise ValueError('The item %s should be either T1 or T2' % op)
+        return True
+
+    def put(self, k, *args, **kwargs):
+        """Insert an item in the cache if not already inserted.
+
+        If the element is already present in the cache, it will pushed to the
+        top of the cache.
+
+        Parameters
+        ----------
+        k : any hashable type
+            The item to be inserted
+
+        Returns
+        -------
+        evicted : any hashable type
+            The evicted object or *None* if no contents were evicted.
+        """
+        # if content in cache, push it on top, no eviction
+        if k in self._cache:
+           op = self._cache[k]
+           if op == 'T1':
+               self._T1.remove(k)
+               self._T2.append_top(k)
+               self._cache[k] = 'T2'
+           elif op == 'T2':
+               self._T2.move_to_top(k)
+           else:
+               raise ValueError('The item %s should be either T1 or T2' % op)
+        else:
+            L1len = len(self._T1) + len(self._B1)
+            L2len = len(self._T2) + len(self._B2)
+            if k in self._B1:
+                self._p = min(self._maxlen, self._p + max(len(self._B2)/len(self._B1), 1))
+                self.replace(k) 
+                self._B1.remove(k)
+                self._T2.append_top(k)
+                self._cache[k] = 'T2'
+                if len(self._cache) > self._maxlen:
+                    raise ValueError('cache exceeds its size limit')
+            elif k in self._B2:
+                self._p = max(0, self._p - max(len(self._B1)/len(self._B2), 1))
+                self.replace(k)
+                self._B2.remove(k)
+                self._T2.append_top(k)
+                self._cache[k] = 'T2'
+                if len(self._cache) > self._maxlen:
+                    raise ValueError('cache exceeds its size limit')
+            else:
+                if L1len == self._maxlen:
+                   if len(self._T1) < self._maxlen:
+                       self._B1.pop_bottom()
+                       self.replace(k)
+                   else:
+                       evicted = self._T1.pop_bottom()
+                       self._cache.pop(evicted)
+                elif L1len < self._maxlen and L1len + L2len >= self._maxlen:
+                    if L1len + L2len == 2 * self._maxlen:
+                        self._B2.pop_bottom()
+                    self.replace(k)
+                self._T1.append_top(k)
+                self._cache[k] = 'T1'
+                if len(self._cache) > self._maxlen:
+                    raise ValueError('cache exceeds its size limit')
+
+        return None
+
+    @inheritdoc(Cache)
+    def remove(self, k, *args, **kwargs):
+        if k not in self._cache:
+            return False
+        op = self._cache[k]
+        if op == 'T1':
+            self._T1.remove(k)
+        else:
+            self._T2.remove(k)
+        self._cache.pop(k)
+        return True
+
+    @inheritdoc(Cache)
+    def clear(self):
+        self._cache.clear()
+        self._T1.clear()
+        self._T2.clear()
+        self._B1.clear()
+        self._B2.clear()
 
 
 @register_cache_policy('LIRS')

@@ -37,10 +37,11 @@ LINE_WIDTH = 1.5
 # Plot
 PLOT_EMPTY_GRAPHS = True
 
-# This dict maps strategy names to the style of the line to be used in the plots
+# This dict maps policy names to the style of the line to be used in the plots
 POLICY_STYLE = {          
          'LRU':             'b--p',
          'LIRS':            'g-->',
+         'ARC':             'y-d',
          'SLRU':            'r-o',
          'FIFO':            'c--<',
          'RAND':            'm--*'
@@ -49,7 +50,8 @@ POLICY_STYLE = {
 # This dict maps name of policies to names to be displayed in the legend
 POLICY_LEGEND = {
          'LRU':             'LRU',
-         'LIRS':            'LIRS', 
+         'LIRS':            'LIRS',
+         'ARC':             'ARC', 
          'SLRU':            'SLRU',
          'FIFO':            'FIFO',
          'RAND':            'RAND'     
@@ -61,7 +63,8 @@ POLICY_BAR_COLOR = {
     'LIRS':          '0.4',
     'SLRU':          '0.5',
     'FIFO':          '0.6',
-    'RAND':          '0.7'
+    'RAND':          '0.7',
+    'ARC':           '0.8'
     }
 
 POLICY_BAR_HATCH = {
@@ -69,7 +72,8 @@ POLICY_BAR_HATCH = {
     'LIRS':         '//',
     'SLRU':         'x',
     'FIFO':         '+',
-    'RAND':         '\\'
+    'RAND':         '\\',
+    'ARC':          'o'
     }
 
 
