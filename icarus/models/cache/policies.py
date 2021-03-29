@@ -14,6 +14,7 @@ from icarus.registry import register_cache_policy
 from icarus.util import apportionment, inheritdoc
 
 import numpy as np
+import logging
 
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
         'ttl_cache',
            ]
 
+logger = logging.getLogger('policy')
 
 class LinkedSet(object):
     """A doubly-linked set, i.e., a set whose entries are ordered and stored
@@ -1011,7 +1013,7 @@ class LirsCache(Cache):
         self._q = LinkedSet() # resident HIRS list Q
         self._state = {}
         self._maxlen = int(maxlen)
-        self._qlen = int(self._maxlen / 100 ) + 1
+        self._qlen = int(self._maxlen / 10 ) + 1
         self._slen = self._maxlen - self._qlen
         self._cache = LinkedSet()
         self._vtime = 0
@@ -1047,6 +1049,7 @@ class LirsCache(Cache):
         while x is not None and self._state[x] != 'lir':
             self._s.remove(x)
             if self._state[x] == 'nhir':
+                #logger.info('Delete item state is %s, item val is %s' % (self._state[x],x))
                 del self._state[x]
                 if x in self._q:
                     raise ValueError('non-resident HIR should not be in List Q')
@@ -1113,6 +1116,7 @@ class LirsCache(Cache):
                 self._state[k] = 'lir'
                 self._s.append_top(k)
                 self._cache.append_top(k)
+                #logger.info('Stack s current len is %d,max len is %d',len(self._s), self._slen)
             elif len(self._q) < self._qlen:
                 self._state[k] = 'hir'
                 self._s.append_top(k)
@@ -1493,6 +1497,7 @@ class InCacheLfuCache(Cache):
         if self.has(k):
             freq, t = self._cache[k]
             self._cache[k] = freq + 1, t
+            #logger.info('Cache[k] val is %s',self._cache[k])
             return True
         else:
             return False
@@ -1504,6 +1509,7 @@ class InCacheLfuCache(Cache):
             self._cache[k] = (1, self.t)
             if len(self._cache) > self._maxlen:
                 evicted = min(self._cache, key=lambda x: self._cache[x])
+                #logger.info('Evicted val is %s',self._cache[evicted])
                 self._cache.pop(evicted)
                 return evicted
         return None

@@ -49,12 +49,13 @@ STRATEGY_STYLE = {
          'HR_HYBRID_SM':    'r-v',
          'LCE':             'b--p',
          'LCD':             'g-->',
-         'CL4M':            'g-->',
+         'CL4M':            'g-<',
          'PROB_CACHE':      'c--<',
          'RAND_CHOICE':     'r--<',
          'RAND_BERNOULLI':  'g--*',
          'NO_CACHE':        'k:o',
-         'OPTIMAL':         'k-o'
+         'OPTIMAL':         'k-o',
+         'ACTIVE_PUSH':     'r-o',
                 }
 
 # This dict maps name of strategies to names to be displayed in the legend
@@ -71,7 +72,8 @@ STRATEGY_LEGEND = {
          'RAND_CHOICE':     'Random (choice)',
          'RAND_BERNOULLI':  'Random (Bernoulli)',
          'NO_CACHE':        'No caching',
-         'OPTIMAL':         'Optimal'
+         'OPTIMAL':         'Optimal',
+         'ACTIVE_PUSH':     'Active Push'
                     }
 
 # Color and hatch styles for bar charts of cache hit ratio and link load vs topology
@@ -80,7 +82,8 @@ STRATEGY_BAR_COLOR = {
     'LCD':          '0.4',
     'NO_CACHE':     '0.5',
     'HR_ASYMM':     '0.6',
-    'HR_SYMM':      '0.7'
+    'HR_SYMM':      '0.7',
+    'ACTIVE_PUSH':  '0.8'
     }
 
 STRATEGY_BAR_HATCH = {
@@ -88,7 +91,8 @@ STRATEGY_BAR_HATCH = {
     'LCD':          '//',
     'NO_CACHE':     'x',
     'HR_ASYMM':     '+',
-    'HR_SYMM':      '\\'
+    'HR_SYMM':      '\\',
+    'ACTIVE_PUSH':  'o'
     }
 
 

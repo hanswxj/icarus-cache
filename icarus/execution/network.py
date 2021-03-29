@@ -318,6 +318,38 @@ class NetworkView(object):
         if node in self.model.cache:
             return self.model.cache[node].dump()
 
+    def is_cache_full(self, node):
+        """Check if the local cache of a node is full.
+
+        Parameters
+        ----------
+        node : any hashable type
+            The node identifier
+
+        Returns
+        -------
+        has_content : bool
+            *True* if the cache is full, *False* otherwise.
+        """
+        
+        return len(self.model.cache[node].dump()) == self.model.cache[node].maxlen
+    
+    def cache_size(self, node):
+        """Returns the cache size of a specific node with cache ability
+
+        Parameters
+        ----------
+        node : any hashable type
+            The node identifier
+
+        Returns
+        -------
+        dump : int
+            cache size of the node
+        """
+        
+        return len(self.model.cache[node].dump())
+
 
 class NetworkModel(object):
     """Models the internal state of the network.

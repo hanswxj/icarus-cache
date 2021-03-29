@@ -43,6 +43,7 @@ POLICY_STYLE = {
          'LIRS':            'g-->',
          'ARC':             'y-d',
          'SLRU':            'r-o',
+         'IN_CACHE_LFU':    'k-.^',
          'FIFO':            'c--<',
          'RAND':            'm--*'
                 }
@@ -53,6 +54,7 @@ POLICY_LEGEND = {
          'LIRS':            'LIRS',
          'ARC':             'ARC', 
          'SLRU':            'SLRU',
+         'IN_CACHE_LFU':    'IN_CACHE_LFU',
          'FIFO':            'FIFO',
          'RAND':            'RAND'     
                     }
@@ -64,7 +66,8 @@ POLICY_BAR_COLOR = {
     'SLRU':          '0.5',
     'FIFO':          '0.6',
     'RAND':          '0.7',
-    'ARC':           '0.8'
+    'ARC':           '0.8',
+    'IN_CACHE_LFU':  '0.9'
     }
 
 POLICY_BAR_HATCH = {
@@ -73,7 +76,8 @@ POLICY_BAR_HATCH = {
     'SLRU':         'x',
     'FIFO':         '+',
     'RAND':         '\\',
-    'ARC':          'o'
+    'ARC':          'o',
+    'IN_CACHE_LFU': '|'
     }
 
 

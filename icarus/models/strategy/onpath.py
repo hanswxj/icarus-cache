@@ -18,6 +18,7 @@ __all__ = [
        'CacheLessForMore',
        'RandomBernoulli',
        'RandomChoice',
+       'Active_Push',
            ]
 
 
@@ -413,4 +414,78 @@ class RandomChoice(Strategy):
             self.controller.forward_content_hop(u, v)
             if v == designated_cache:
                 self.controller.put_content(v)
+        self.controller.end_session()
+
+@register_strategy('ACTIVE_PUSH')
+class Active_Push(Strategy):
+    
+    @inheritdoc(Strategy)
+    def __init__(self, view, controller, **kwargs):
+        super(Active_Push, self).__init__(view, controller)
+        topology = view.topology()
+        self.betw = nx.betweenness_centrality(topology)
+        self.popularity_index = {}
+        for i in view.topology().nodes():
+            self.popularity_index[i] = {}
+
+    @inheritdoc(Strategy)
+    def process_event(self, time, receiver, content, log):
+        # get all required data
+        source = self.view.content_source(content)
+        path = self.view.shortest_path(receiver, source)
+        # Route requests to original source and queries caches on the path
+        self.controller.start_session(time, receiver, content, log)
+        mark = 0
+        cacheNode = []
+        tag = True
+        k = 3
+        cooperation = False
+        G = nx.Graph()
+        G = self.view.topology()
+        neighbor = G.neighbors(receiver)
+        for u, v in path_links(path):
+            self.controller.forward_request_hop(u, v)
+            if self.view.has_cache(v):
+                if(content in self.popularity_index[v]):
+                    self.popularity_index[v][content] = self.popularity_index[v][content] + 1
+                else:
+                    self.popularity_index[v][content] = 1    
+
+
+                if self.controller.get_content(v):
+                    serving_node = v
+                    break
+                else:
+                    if v != source and self.view.has_cache(u):
+                        for son in range(v*k+1,(v+1)*k+1):
+                            if son != u and self.view.has_cache(son):
+                                if self.view.cache_lookup(son, content):
+                                    if self.controller.get_content(son):
+                                        serving_node = son
+                                        cooperation = True
+                                        break
+                        if cooperation:
+                            break
+                    
+                    if self.view.is_cache_full(v):
+                        for cache in self.view.cache_dump(v):
+                            if self.popularity_index[v][content] > self.popularity_index[v][cache] :
+                                cacheNode.append(v)
+                                break
+                    else:
+                        cacheNode.append(v)
+        else:    
+            # No cache hits, get content from source
+            self.controller.get_content(v)
+            serving_node = v
+        # Return content
+        path = list(reversed(self.view.shortest_path(receiver, serving_node)))
+        for u, v in path_links(path):
+            self.controller.forward_content_hop(u, v)
+            if self.view.has_cache(v):
+                # insert content
+                if v in cacheNode and serving_node == source and not cooperation:
+                    if tag:
+                        self.controller.put_content(v)
+                        tag = False
         self.controller.end_session()

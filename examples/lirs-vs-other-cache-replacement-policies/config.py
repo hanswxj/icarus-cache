@@ -92,10 +92,11 @@ STRATEGIES = [
 # Cache policy implmentations are located in ./icarus/models/cache.py
 CACHE_POLICIES = [
 #     'LRU',
-     'SLRU',
-     'ARC',
-     'LIRS',
+      'SLRU',
+      'ARC',
+      'LIRS',
 #     'FIFO',
+#     'IN_CACHE_LFU',
 #     'RAND',
                ]
 
