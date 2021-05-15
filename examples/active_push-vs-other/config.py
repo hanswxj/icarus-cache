@@ -48,11 +48,10 @@ DATA_COLLECTORS = ['CACHE_HIT_RATIO', 'LATENCY', 'LINK_LOAD', 'PATH_STRETCH']
 # This would give problems while trying to plot the results because if for
 # example I wanted to filter experiment with alpha=0.8, experiments with
 # alpha = 0.799999999999 would not be recognized
-ALPHA = [0.6, 0.7, 0.8, 0.9, 1.0]
-# [1.0, 1.2]
+ALPHA = [1.0, 1.2]
 
 # Total size of network cache as a fraction of content population
-NETWORK_CACHE = [0.02, 0.05, 0.1, 0.15, 0.2]
+NETWORK_CACHE = [0.05, 0.1, 0.15, 0.2]
 # [0.004, 0.002, 0.01, 0.05]
 
 # Number of content objects
@@ -73,7 +72,7 @@ N_MEASURED_REQUESTS = 6 * 10 ** 4
 # Topology implementations are located in ./icarus/scenarios/topology.py
 TOPOLOGIES = [
         'GEANT',
-        'WIDE',
+        # 'WIDE',
         # 'GARR',
         # 'TISCALI',
               ]
@@ -88,13 +87,13 @@ STRATEGIES = [
     #  'HR_MULTICAST',  # Multicast hash-routing
     #  'HR_HYBRID_AM',  # Hybrid Asymm-Multicast hash-routing
     #  'HR_HYBRID_SM',  # Hybrid Symm-Multicast hash-routing
-     'CL4M',  # Cache less for more
-     'PROB_CACHE',  # ProbCache
-     'LCD',  # Leave Copy Down
-     'RAND_CHOICE',  # Random choice: cache in one random cache on path
+    #  'CL4M',  # Cache less for more
+    #  'PROB_CACHE',  # ProbCache
+    #  'LCD',  # Leave Copy Down
+    #  'RAND_CHOICE',  # Random choice: cache in one random cache on path
     #  'RAND_BERNOULLI',  # Random Bernoulli: cache randomly in caches on path
-     'CPNI',  # CPNI: content popularity and node importance on path    
-     'APOP',  # APOP: Active push off path
+     'ACTIVE_PUSH',
+     'ACTIVE_PUSH2',
              ]
 
 # Cache replacement policy used by the network caches.

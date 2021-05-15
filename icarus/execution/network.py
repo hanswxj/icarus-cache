@@ -874,3 +874,20 @@ class NetworkController(object):
         """
         if node in self.model.local_cache:
             return self.model.local_cache[node].put(self.session['content'])
+
+    def get_neighbors(self, node):
+        """Get the neighbors of node v
+        
+        Parameters
+        ----------
+        node : any hashable type
+            Node to find its neighbors
+        Return:
+        node's neighbors with cache
+        """
+        node_neighbors = self.model.topology.neighbors(node)
+        neighbors = []
+        for node in node_neighbors:
+            if node in self.model.cache:
+                neighbors.append(node)        
+        return neighbors

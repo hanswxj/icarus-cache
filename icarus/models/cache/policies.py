@@ -1013,10 +1013,13 @@ class LirsCache(Cache):
         self._q = LinkedSet() # resident HIRS list Q
         self._state = {}
         self._maxlen = int(maxlen)
-        self._qlen = int(self._maxlen / 10 ) + 1
-        self._slen = self._maxlen - self._qlen
+        self._hir = int(self._maxlen / 10 ) + 1
+        self._lir = self._maxlen - self._hir
+        self._curlir = 0
+        self._curhir = 0
+        # self._qlen = self._hir
+        # self._slen = 2 * self._maxlen
         self._cache = LinkedSet()
-        self._vtime = 0
         if self._maxlen <= 0:
             raise ValueError('maxlen must be positive')
 
@@ -1049,7 +1052,7 @@ class LirsCache(Cache):
         while x is not None and self._state[x] != 'lir':
             self._s.remove(x)
             if self._state[x] == 'nhir':
-                #logger.info('Delete item state is %s, item val is %s' % (self._state[x],x))
+                # logger.info('Delete item state is %s, item val is %s' % (self._state[x],x))
                 del self._state[x]
                 if x in self._q:
                     raise ValueError('non-resident HIR should not be in List Q')
@@ -1062,8 +1065,7 @@ class LirsCache(Cache):
         # if it has it push on top, otherwise return false
         if k not in self._cache:
             return False
-
-        #self._vtime += 1
+ 
         if self._state[k] == 'lir':
             self._s.move_to_top(k)
             self.stack_pruning()
@@ -1104,28 +1106,23 @@ class LirsCache(Cache):
 
 
         if k in self._cache:
-            if k in self._s:
-                self._s.move_to_top(k)
-                self.stack_pruning()
-            elif k in self._q:
-                self._q.move_to_top(k)
-            else:
-                raise ValueError('content is in cache, but not in Stack S or List Q')
+            self.get(k)
         else:
-            if len(self._s) < self._slen:
+            if self._curlir < self._lir:
                 self._state[k] = 'lir'
+                self._curlir += 1
                 self._s.append_top(k)
                 self._cache.append_top(k)
-                #logger.info('Stack s current len is %d,max len is %d',len(self._s), self._slen)
-            elif len(self._q) < self._qlen:
+            elif self._curhir < self._hir:
                 self._state[k] = 'hir'
+                self._curhir += 1
                 self._s.append_top(k)
                 self._q.append_top(k)
                 self._cache.append_top(k)
                 if k not in self._cache:
                     raise ValueError('content %s in List Q should be in cache' % str(x))
             else:
-                if len(self._s) + len(self._q) < self._maxlen:
+                if self._curlir + self._curhir < self._maxlen:
                     raise ValueError('still have capacity, should not be here')
 
                 evicted = self._q.pop_bottom()
@@ -1133,7 +1130,6 @@ class LirsCache(Cache):
                 self._cache.remove(evicted)
                 self._cache.append_top(k)
                 
-
                 if k in self._s:
                     self._state[k] = 'lir'
                     self._s.move_to_top(k)
@@ -1149,18 +1145,15 @@ class LirsCache(Cache):
                     self._state[k] = 'hir'
                     self._q.append_top(k)
                     if k not in self._cache:
-                        raise ValueError('content %s in List Q should be in cache' % str(x))
+                        raise ValueError('content %s in List Q should be in cache' % str(k))
                     self._s.append_top(k)
-
-
 
         if k not in self._state:
             raise ValueError('content %s is stateless, why?' % str(k))
 
         if len(self._cache) > self._maxlen:
             raise ValueError('cache exceeds its capacity')
-    
-        #self._vtime += 1
+
         return None
 
     @inheritdoc(Cache)

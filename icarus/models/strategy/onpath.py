@@ -1,3 +1,4 @@
+# encoding: utf-8
 """Implementations of all on-path strategies"""
 from __future__ import division
 import random
@@ -18,7 +19,8 @@ __all__ = [
        'CacheLessForMore',
        'RandomBernoulli',
        'RandomChoice',
-       'Active_Push',
+       'ContentPopularityNodeImportance',
+       'ActivePushOffpath',
            ]
 
 
@@ -416,60 +418,75 @@ class RandomChoice(Strategy):
                 self.controller.put_content(v)
         self.controller.end_session()
 
-@register_strategy('ACTIVE_PUSH')
-class Active_Push(Strategy):
+
+@register_strategy('CPNI')
+class ContentPopularityNodeImportance(Strategy):
     
     @inheritdoc(Strategy)
     def __init__(self, view, controller, **kwargs):
-        super(Active_Push, self).__init__(view, controller)
+        super(ContentPopularityNodeImportance, self).__init__(view, controller)
         topology = view.topology()
-        self.betw = nx.betweenness_centrality(topology)
-        self.popularity_index = {}
+        self.request = {}                #拓扑内节点的请求次数
+        self.req_list = {}
         for i in view.topology().nodes():
-            self.popularity_index[i] = {}
+            self.req_list[i] = {}  #每一节点的内容流行度表初始化为空
+            self.request[i] = 0         #所有节点请求次数初始化为0
+        
+        self.betw = nx.betweenness_centrality(topology)    #所有节点的中介中心性
+        max_betw = max(self.betw.values())
+        for i in self.betw:
+            self.betw[i] = self.betw[i] / max_betw
+        
+        self.deg = nx.degree_centrality(topology)          #所有节点的介数
+        max_deg = max(self.deg.values())
+        for i in self.deg:
+            self.deg[i] = self.deg[i] / max_deg
+        
+        self.close = nx.closeness_centrality(topology)          #所有节点的紧密中心性
+        max_close = max(self.close.values())
+        for i in self.close:
+            self.close[i] = self.close[i] / max_close
+        
+        self.nodeweight = {}
+        for i in self.betw:
+            self.nodeweight[i] = (self.betw[i] ** 2 + self.deg[i] ** 2 + self.close[i] ** 2) ** 0.5
+            self.nodeweight[i] = self.nodeweight[i] / 3
+
+        # max_node = max(self.nodeweight.values())
+        # for i in self.nodeweight:
+        #     self.nodeweight[i] = self.nodeweight[i] / max_node
+        
+        self.distance = dict(nx.all_pairs_dijkstra_path_length(topology, weight='delay'))    #拓扑内的任俩节点间距离列表
 
     @inheritdoc(Strategy)
     def process_event(self, time, receiver, content, log):
         # get all required data
-        source = self.view.content_source(content)
-        path = self.view.shortest_path(receiver, source)
+        source = self.view.content_source(content)           #得到content源节点的位置  
+        locations = self.view.content_locations(content)     #得到所有缓存content副本的节点（含源节点）
+        
+        nearest_replica = min(locations, key=lambda x: self.distance[receiver][x])
+        path = self.view.shortest_path(receiver, nearest_replica) 
+        
         # Route requests to original source and queries caches on the path
         self.controller.start_session(time, receiver, content, log)
-        mark = 0
-        cacheNode = []
-        tag = True
-        k = 3
-        cooperation = False
-        G = nx.Graph()
-        G = self.view.topology()
-        neighbor = G.neighbors(receiver)
+        cacheNode = []    
         for u, v in path_links(path):
-            self.controller.forward_request_hop(u, v)
+            self.controller.forward_request_hop(u, v)            
             if self.view.has_cache(v):
-                if(content in self.popularity_index[v]):
-                    self.popularity_index[v][content] = self.popularity_index[v][content] + 1
+                self.request[v] += 1
+                if content in self.req_list[v]:
+                    self.req_list[v][content] += 1
                 else:
-                    self.popularity_index[v][content] = 1    
+                    self.req_list[v][content] = 1    
 
 
                 if self.controller.get_content(v):
                     serving_node = v
                     break
                 else:
-                    if v != source and self.view.has_cache(u):
-                        for son in range(v*k+1,(v+1)*k+1):
-                            if son != u and self.view.has_cache(son):
-                                if self.view.cache_lookup(son, content):
-                                    if self.controller.get_content(son):
-                                        serving_node = son
-                                        cooperation = True
-                                        break
-                        if cooperation:
-                            break
-                    
                     if self.view.is_cache_full(v):
                         for cache in self.view.cache_dump(v):
-                            if self.popularity_index[v][content] > self.popularity_index[v][cache] :
+                            if self.req_list[v][content] > self.req_list[v][cache] :
                                 cacheNode.append(v)
                                 break
                     else:
@@ -484,8 +501,133 @@ class Active_Push(Strategy):
             self.controller.forward_content_hop(u, v)
             if self.view.has_cache(v):
                 # insert content
-                if v in cacheNode and serving_node == source and not cooperation:
-                    if tag:
-                        self.controller.put_content(v)
-                        tag = False
+                if v in cacheNode:
+                    self.controller.put_content(v)
+        self.controller.end_session()
+
+
+@register_strategy('APOP')
+class ActivePushOffpath(Strategy):
+    
+    @inheritdoc(Strategy)
+    def __init__(self, view, controller, radius = 3, **kwargs):
+        super(ActivePushOffpath, self).__init__(view, controller)
+        topology = view.topology()
+        self.total_req = 0
+        self.request = {}                #拓扑内节点的请求次数
+        self.req_list = {}
+        self.content_req = {}
+        self.content_req_ratio = {}
+        for i in view.topology().nodes():
+            self.req_list[i] = {}  #每一节点的内容流行度表初始化为空
+            self.request[i] = 0         #所有节点请求次数初始化为0
+        
+        self.betw = nx.betweenness_centrality(topology)    #所有节点的中介中心性
+        max_betw = max(self.betw.values())
+        for i in self.betw:
+            self.betw[i] = self.betw[i] / max_betw
+        
+        self.deg = nx.degree_centrality(topology)          #所有节点的介数
+        max_deg = max(self.deg.values())
+        for i in self.deg:
+            self.deg[i] = self.deg[i] / max_deg
+        
+        self.close = nx.closeness_centrality(topology)          #所有节点的紧密中心性
+        max_close = max(self.close.values())
+        for i in self.close:
+            self.close[i] = self.close[i] / max_close
+        
+        self.nodeweight = {}
+        for i in self.betw:
+            self.nodeweight[i] = (self.betw[i] ** 2 + self.deg[i] ** 2 + self.close[i] ** 2) ** 0.5
+            self.nodeweight[i] = self.nodeweight[i] / 3
+
+        max_node = max(self.nodeweight.values())
+        for i in self.nodeweight:
+            self.nodeweight[i] = self.nodeweight[i] / max_node
+        
+        self.distance = dict(nx.all_pairs_dijkstra_path_length(topology, weight='delay'))    #拓扑内的任俩节点间距离列表
+
+    @inheritdoc(Strategy)
+    def process_event(self, time, receiver, content, log):
+        # get all required data
+        source = self.view.content_source(content)           #得到content源节点的位置  
+        locations = self.view.content_locations(content)     #得到所有缓存content副本的节点（含源节点）
+        
+        nearest_replica = min(locations, key=lambda x: self.distance[receiver][x])
+        path = self.view.shortest_path(receiver, nearest_replica) 
+        
+        # Route requests to original source and queries caches on the path
+        self.controller.start_session(time, receiver, content, log)
+        cacheNode = []    
+        for u, v in path_links(path):
+            self.controller.forward_request_hop(u, v)            
+            if self.view.has_cache(v):
+                self.total_req += 1
+                self.request[v] += 1
+                if content in self.req_list[v]:
+                    self.req_list[v][content] += 1
+                else:
+                    self.req_list[v][content] = 1
+
+                if content in self.content_req:
+                    self.content_req[content] += 1
+                else:
+                    self.content_req[content] = 1
+
+
+                if self.controller.get_content(v):
+                    serving_node = v
+                    break
+                else:                   
+                    if self.view.is_cache_full(v):
+                        for cache in self.view.cache_dump(v):
+                            if self.req_list[v][content] > self.req_list[v][cache] :
+                                cacheNode.append(v)
+                                break
+                    else:
+                        cacheNode.append(v)
+        else:    
+            # No cache hits, get content from source
+            self.controller.get_content(v)
+            serving_node = v
+        # Return content
+        path = list(reversed(self.view.shortest_path(receiver, serving_node)))
+        for u, v in path_links(path):
+            self.controller.forward_content_hop(u, v)
+            if self.view.has_cache(v):
+                # insert content
+                if v in cacheNode:
+                    self.controller.put_content(v)                    
+                    temp = sorted(self.content_req.items(), key=lambda item:item[1], reverse = True)
+                    if(self.content_req[content] > temp[int(len(temp) / 4)][1]):
+                        neighbor = self.controller.get_neighbors(v)
+                        weight = 0
+                        candidate = v
+                        for node in neighbor:
+                            if self.nodeweight[node] > weight:
+                                weight = self.nodeweight[node]
+                                candidate = node
+                        if self.nodeweight[candidate] > self.nodeweight[v]:
+                            if (self.view.cache_lookup(candidate, content) == False):
+                                self.controller.forward_content_hop(v, candidate)
+                                if self.view.is_cache_full(candidate):
+                                    for cache in self.view.cache_dump(candidate):
+                                        if self.content_req[content] > self.content_req[cache]:
+                                            self.total_req += 1
+                                            self.request[candidate] += 1
+                                            if content in self.req_list[candidate]:
+                                                self.req_list[candidate][content] += 1
+                                            else:
+                                                self.req_list[candidate][content] = 1                              
+                                            self.controller.put_content(candidate)
+                                            break
+                                else:
+                                    self.total_req += 1
+                                    self.request[candidate] += 1
+                                    if content in self.req_list[candidate]:
+                                        self.req_list[candidate][content] = self.req_list[candidate][content] + 1
+                                    else:
+                                        self.req_list[candidate][content] = 1
+                                    self.controller.put_content(candidate)
         self.controller.end_session()

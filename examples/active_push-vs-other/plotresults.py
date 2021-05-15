@@ -42,57 +42,59 @@ PLOT_EMPTY_GRAPHS = True
 # On-path strategies: dashed lines
 # No-cache: dotted line
 STRATEGY_STYLE = {
-        #  'HR_SYMM':         'b-o',
-        #  'HR_ASYMM':        'g-D',
-        #  'HR_MULTICAST':    'm-^',
-        #  'HR_HYBRID_AM':    'c-s',
-        #  'HR_HYBRID_SM':    'r-v',
-         'LCE':             'b-p',
-         'LCD':             'g->',
-         'CL4M':            'y-s',
-         'PROB_CACHE':      'c-<',
-         'RAND_CHOICE':     'm-*',
-        #  'RAND_BERNOULLI':  'g--*',
-        #  'NO_CACHE':        'k:o',
-         'CPNI':            'k-o',
-         'APOP':            'r-v',
+         'HR_SYMM':         'b-o',
+         'HR_ASYMM':        'g-D',
+         'HR_MULTICAST':    'm-^',
+         'HR_HYBRID_AM':    'c-s',
+         'HR_HYBRID_SM':    'r-v',
+         'LCE':             'b--p',
+         'LCD':             'g-->',
+         'CL4M':            'g-<',
+         'PROB_CACHE':      'c--<',
+         'RAND_CHOICE':     'r--<',
+         'RAND_BERNOULLI':  'g--*',
+         'NO_CACHE':        'k:o',
+         'OPTIMAL':         'k-o',
+         'ACTIVE_PUSH':     'r-o',
+         'ACTIVE_PUSH2':    'c-v',
                 }
 
 # This dict maps name of strategies to names to be displayed in the legend
 STRATEGY_LEGEND = {
          'LCE':             'LCE',
          'LCD':             'LCD',
-        #  'HR_SYMM':         'HR Symm',
-        #  'HR_ASYMM':        'HR Asymm',
-        #  'HR_MULTICAST':    'HR Multicast',
-        #  'HR_HYBRID_AM':    'HR Hybrid AM',
-        #  'HR_HYBRID_SM':    'HR Hybrid SM',
+         'HR_SYMM':         'HR Symm',
+         'HR_ASYMM':        'HR Asymm',
+         'HR_MULTICAST':    'HR Multicast',
+         'HR_HYBRID_AM':    'HR Hybrid AM',
+         'HR_HYBRID_SM':    'HR Hybrid SM',
          'CL4M':            'CL4M',
          'PROB_CACHE':      'ProbCache',
          'RAND_CHOICE':     'Random (choice)',
-        #  'RAND_BERNOULLI':  'Random (Bernoulli)',
-        #  'NO_CACHE':        'No caching',
-         'CPNI':            'APOP',
-         'APOP':            'CPNI'
+         'RAND_BERNOULLI':  'Random (Bernoulli)',
+         'NO_CACHE':        'No caching',
+         'OPTIMAL':         'Optimal',
+         'ACTIVE_PUSH':     'Active Push',
+         'ACTIVE_PUSH2':    'Active Push2'
                     }
 
 # Color and hatch styles for bar charts of cache hit ratio and link load vs topology
 STRATEGY_BAR_COLOR = {
     'LCE':          'k',
     'LCD':          '0.4',
-    'CL4M':         '0.5',
-    'PROB_CACHE':   '0.6',
-    'CPNI':         '0.7',
-    'APOP':         '0.8'
+    'NO_CACHE':     '0.5',
+    'HR_ASYMM':     '0.6',
+    'ACTIVE_PUSH':  '0.7',
+    'ACTIVE_PUSH2': '0.8'
     }
 
 STRATEGY_BAR_HATCH = {
     'LCE':          None,
     'LCD':          '//',
-    'CL4M':         'x',
-    'PROB_CACHE':   '+',
-    'CPNI':         'o',
-    'APOP':         '\\',
+    'NO_CACHE':     'x',
+    'HR_ASYMM':     '+',
+    'ACTIVE_PUSH':  'o',
+    'ACTIVE_PUSH2': '\\',
     }
 
 

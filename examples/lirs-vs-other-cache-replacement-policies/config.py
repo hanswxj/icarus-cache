@@ -34,7 +34,7 @@ N_REPLICATIONS = 2
 
 # List of metrics to be measured in the experiments
 # The implementation of data collectors are located in ./icarus/execution/collectors.py
-DATA_COLLECTORS = ['CACHE_HIT_RATIO', 'LATENCY', 'LINK_LOAD', 'PATH_STRETCH']
+DATA_COLLECTORS = ['CACHE_HIT_RATIO', 'LATENCY', 'LINK_LOAD']
 
 # Range of alpha values of the Zipf distribution using to generate content requests
 # alpha values must be positive. The greater the value the more skewed is the
@@ -50,54 +50,54 @@ DATA_COLLECTORS = ['CACHE_HIT_RATIO', 'LATENCY', 'LINK_LOAD', 'PATH_STRETCH']
 # alpha = 0.799999999999 would not be recognized
 
 ALPHA = [
-#        0.6, 
-         1.0
+         0.6,         
+        #  1.0
         ]     
 
 # Total size of network cache as a fraction of content population
 NETWORK_CACHE = [0.02, 0.05, 0.1, 0.15, 0.2]
 
 # Number of content objects
-N_CONTENTS = 3 * 10 ** 5
+N_CONTENTS = 3 * 10 ** 4
 
 # Number of requests per second (over the whole network)
 NETWORK_REQUEST_RATE = 100.0
 
 # Number of content requests generated to prepopulate the caches
 # These requests are not logged
-N_WARMUP_REQUESTS = 3 * 10 ** 5
+N_WARMUP_REQUESTS = 3 * 10 ** 4
 
 # Number of content requests generated after the warmup and logged
 # to generate results.
-N_MEASURED_REQUESTS = 6 * 10 ** 5
+N_MEASURED_REQUESTS = 6 * 10 ** 4
 
 # List of all implemented topologies
 # Topology implementations are located in ./icarus/scenarios/topology.py
 TOPOLOGIES = [
-#        'GEANT',
+       'GEANT',
 #        'WIDE',
 #        'GARR',
-        'TISCALI',        
+        # 'TISCALI',        
              ]
 
 # List of caching and routing strategies
 # The code is located in ./icarus/models/strategy.py
 STRATEGIES = [
-     'LCE',  # Leave Copy Everywhere
-#     'LCD',  # Leave Copy Down
+    #  'LCE',  # Leave Copy Everywhere
+     'LCD',  # Leave Copy Down
              ]
 
 # Cache replacement policy used by the network caches.
 # Supported policies are: 'LRU', 'LFU', 'FIFO', 'RAND' and 'NULL'
 # Cache policy implmentations are located in ./icarus/models/cache.py
 CACHE_POLICIES = [
-#     'LRU',
+      'LRU',
       'SLRU',
-      'ARC',
+    #   'ARC',
       'LIRS',
-#     'FIFO',
+      'FIFO',
 #     'IN_CACHE_LFU',
-#     'RAND',
+      'RAND',
                ]
 
 # Queue of experiments
